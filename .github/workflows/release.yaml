@@ -1,0 +1,38 @@
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            goos: linux
+            binary: modmcctl-linux
+          - runner: windows-latest
+            goos: windows
+            binary: modmcctl-windows.exe
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.25'
+
+    - run: |
+        GOOS=${{ matrix.goos }} GOARCH=amd64 go build -o ${{ matrix.binary }} .
+      shell: bash
+
+    - uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ matrix.binary }}
+        tag_name: v0.0.${{ github.run_number }}
+        draft: false
+        prerelease: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

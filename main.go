@@ -10,19 +10,15 @@ import (
 )
 
 func main() {
-	mode := flag.String("mode", "client", "client|server|both")
-	clientDirFlag := flag.String("client-dir", "", ".minecraft client absolute path")
-	serverDirFlag := flag.String("server-dir", "", ".minecraft server absolute path")
-	version := flag.String("version", "", "minecraft version")
-	loader := flag.String("loader", "", "neoforge|fabric")
-	providerName := flag.String("provider", "modrinth", "modrinth|curseforge")
-	modsFlag := flag.String("mods", "", "list of mods slugs/names, separated by comma")
+	mode, _ := Flag("mode", "client", "client|server|both", Contains("not supported mode", "client", "server", "both"))
+	clientDirFlag, _ := Flag("client-dir", "", ".minecraft client absolute path", nil)
+	serverDirFlag, _ := Flag("server-dir", "", ".minecraft server absolute path", nil)
+	version := Required(Flag("version", "", "minecraft version", nil))
+	loader := Required(Flag("loader", "", "neoforge|fabric", Contains("not supported loader", "neoforge", "fabric")))
+	providerName, _ := Flag("provider", "modrinth", "modrinth|curseforge", Contains("not supported provider", "modrinth", "curseforge"))
+	modsFlag := Required(Flag("mods", "", "list of mods slugs/names, separated by comma", nil))
 	flag.Parse()
-
-	if *version == "" || *loader == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
+	Validate()
 
 	clientDir := getClientDir(*clientDirFlag)
 	serverDir := getServerDir(*serverDirFlag)
@@ -35,7 +31,6 @@ func main() {
 		modsDirs = append(modsDirs, filepath.Join(serverDir, "mods"))
 	}
 
-
 	if err := installLoader(*loader, *mode, clientDir, serverDir, *version); err != nil {
 		fmt.Println("error: ", err)
 		os.Exit(1)
@@ -47,7 +42,6 @@ func main() {
 	} else {
 		provider = &ModrinthProvider{}
 	}
-
 
 	if *modsFlag != "" && provider != nil {
 		modList := strings.Split(*modsFlag, ",")
